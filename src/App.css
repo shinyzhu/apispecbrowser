@@ -636,6 +636,164 @@
   font-size: 12px;
 }
 
+/* Schema Hierarchy */
+.schema-hierarchy {
+  max-width: 900px;
+}
+
+.schema-hierarchy h2 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.schema-hierarchy-desc {
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
+}
+
+.hierarchy-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hierarchy-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: background-color 0.15s;
+}
+
+.hierarchy-btn:hover {
+  background: var(--color-bg);
+}
+
+.hierarchy-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hierarchy-node {
+  border-left: 2px solid var(--color-border);
+  padding-left: 8px;
+}
+
+.hierarchy-node-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.hierarchy-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 3px;
+}
+
+.hierarchy-toggle:hover {
+  background: var(--color-border);
+}
+
+.hierarchy-toggle-placeholder {
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.hierarchy-node-name {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.hierarchy-node-name:hover {
+  background: var(--color-active-bg);
+  text-decoration: underline;
+}
+
+.hierarchy-node-name.cyclic {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.hierarchy-rel-count {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-left: 4px;
+}
+
+.hierarchy-children {
+  list-style: none;
+  padding: 0 0 0 12px;
+  margin: 0;
+}
+
+.hierarchy-rel {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.hierarchy-rel-label {
+  font-size: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: #f3f4f6;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hierarchy-rel-label.rel-allOf {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.hierarchy-rel-label.rel-oneOf {
+  background: #fce7f3;
+  color: #be185d;
+}
+
+.hierarchy-rel-label.rel-anyOf {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.hierarchy-rel-label.rel-array-item {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.hierarchy-arrow {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+  line-height: 24px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .app-body {

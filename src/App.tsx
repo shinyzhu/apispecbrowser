@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { OpenAPISpec, NavItem, ViewTarget } from "./types";
-import { parseSpecFromUrl, parseSpecFromText, buildNavItems } from "./utils/parseSpec";
+import { parseSpecFromUrl, parseSpecFromText, buildNavItems, buildSchemaRelationships } from "./utils/parseSpec";
 import SpecLoader from "./components/SpecLoader";
 import Sidebar from "./components/Sidebar";
 import InfoViewer from "./components/InfoViewer";
 import EndpointViewer from "./components/EndpointViewer";
 import SchemaViewer from "./components/SchemaViewer";
+import SchemaHierarchyViewer from "./components/SchemaHierarchyViewer";
 import "./App.css";
 
 function viewTargetToId(target: ViewTarget): string {
@@ -16,6 +17,8 @@ function viewTargetToId(target: ViewTarget): string {
       return `endpoint-${target.method}-${target.path}`;
     case "schema":
       return `schema-${target.name}`;
+    case "schema-hierarchy":
+      return "schema-hierarchy";
   }
 }
 
@@ -79,6 +82,11 @@ function App() {
     setSearchQuery("");
   }, []);
 
+  const schemaNodes = useMemo(
+    () => (spec ? buildSchemaRelationships(spec) : []),
+    [spec]
+  );
+
   return (
     <div className="app">
       <header className="app-header">
@@ -123,6 +131,12 @@ function App() {
             )}
             {activeView.kind === "schema" && (
               <SchemaViewer spec={spec} schemaName={activeView.name} />
+            )}
+            {activeView.kind === "schema-hierarchy" && (
+              <SchemaHierarchyViewer
+                schemaNodes={schemaNodes}
+                onSelect={setActiveView}
+              />
             )}
           </main>
         </div>
