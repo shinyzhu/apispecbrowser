@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { OpenAPISpec, SchemaObject } from "../types";
 import type { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 
@@ -7,6 +8,55 @@ interface EndpointViewerProps {
   spec: OpenAPISpec;
   method: string;
   path: string;
+}
+
+interface ExampleEntry {
+  name: string;
+  value: unknown;
+  summary?: string;
+}
+
+function getExamples(mediaTypeObj: OpenAPIV3.MediaTypeObject): ExampleEntry[] {
+  if (mediaTypeObj.examples) {
+    return Object.entries(mediaTypeObj.examples)
+      .filter(([, ex]) => ex && typeof ex === "object" && "value" in ex)
+      .map(([name, ex]) => {
+        const exObj = ex as OpenAPIV3.ExampleObject;
+        return { name, value: exObj.value, summary: exObj.summary };
+      });
+  }
+  if (mediaTypeObj.example !== undefined) {
+    return [{ name: "Example", value: mediaTypeObj.example }];
+  }
+  return [];
+}
+
+function ExampleBlock({ examples }: { examples: ExampleEntry[] }) {
+  const [selected, setSelected] = useState(0);
+  if (examples.length === 0) return null;
+
+  const current = examples[selected];
+  return (
+    <div className="example-block">
+      <div className="example-header">
+        <span className="example-label">Example</span>
+        {examples.length > 1 && (
+          <select
+            className="example-select"
+            value={selected}
+            onChange={(e) => setSelected(Number(e.target.value))}
+          >
+            {examples.map((ex, i) => (
+              <option key={ex.name} value={i}>
+                {ex.summary ?? ex.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+      <pre className="example-code">{JSON.stringify(current.value, null, 2)}</pre>
+    </div>
+  );
 }
 
 function SchemaPreview({ schema, depth = 0 }: { schema: SchemaObject; depth?: number }) {
@@ -61,16 +111,22 @@ function ResponseSection({ responses }: { responses: Record<string, OpenAPIV3.Re
             <span className={`status-code status-${code.charAt(0)}xx`}>{code}</span>
             <span className="response-desc">{response.description}</span>
           </div>
-          {response.content && Object.entries(response.content).map(([mediaType, content]) => (
-            <div key={mediaType} className="response-content">
-              <span className="media-type">{mediaType}</span>
-              {content.schema && (
-                <div className="response-schema">
-                  <SchemaPreview schema={content.schema as SchemaObject} />
+          {response.content && Object.entries(response.content).map(([mediaType, content]) => {
+            const examples = getExamples(content as OpenAPIV3.MediaTypeObject);
+            return (
+              <div key={mediaType} className="response-content">
+                <span className="media-type">{mediaType}</span>
+                <div className={`schema-example-row${examples.length > 0 ? " has-example" : ""}`}>
+                  {content.schema && (
+                    <div className="response-schema">
+                      <SchemaPreview schema={content.schema as SchemaObject} />
+                    </div>
+                  )}
+                  <ExampleBlock examples={examples} />
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>
@@ -150,16 +206,22 @@ export default function EndpointViewer({ spec, method, path }: EndpointViewerPro
           <h3>Request Body</h3>
           {requestBody.description && <p>{requestBody.description}</p>}
           {requestBody.required && <span className="required-label">Required</span>}
-          {requestBody.content && Object.entries(requestBody.content).map(([mediaType, content]) => (
-            <div key={mediaType} className="request-content">
-              <span className="media-type">{mediaType}</span>
-              {content.schema && (
-                <div className="request-schema">
-                  <SchemaPreview schema={content.schema as SchemaObject} />
+          {requestBody.content && Object.entries(requestBody.content).map(([mediaType, content]) => {
+            const examples = getExamples(content as OpenAPIV3.MediaTypeObject);
+            return (
+              <div key={mediaType} className="request-content">
+                <span className="media-type">{mediaType}</span>
+                <div className={`schema-example-row${examples.length > 0 ? " has-example" : ""}`}>
+                  {content.schema && (
+                    <div className="request-schema">
+                      <SchemaPreview schema={content.schema as SchemaObject} />
+                    </div>
+                  )}
+                  <ExampleBlock examples={examples} />
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
