@@ -13,7 +13,7 @@ function relationLabel(rel: SchemaRelationship): string {
     case "array-item":
       return `${rel.property}[]`;
     case "allOf":
-      return "extends";
+      return "allOf";
     case "oneOf":
       return "oneOf";
     case "anyOf":

@@ -38,9 +38,9 @@ describe("buildNavItems", () => {
     expect(schemas!.type).toBe("section");
     expect(schemas!.children).toHaveLength(3);
 
-    const hierarchyItem = schemas!.children!.find((c) => c.type === "schema-hierarchy");
-    expect(hierarchyItem).toBeDefined();
-    expect(hierarchyItem!.id).toBe("schema-hierarchy");
+    const hierarchyItem = schemas!.children![0];
+    expect(hierarchyItem.type).toBe("schema-hierarchy");
+    expect(hierarchyItem.id).toBe("schema-hierarchy");
 
     const petSchema = schemas!.children!.find((c) => c.label === "Pet");
     expect(petSchema).toBeDefined();
