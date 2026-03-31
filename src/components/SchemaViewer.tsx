@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { OpenAPISpec, SchemaObject } from "../types";
 import type { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 
@@ -19,6 +20,8 @@ function PropertyRow({
   required: boolean;
   depth?: number;
 }) {
+  const [expanded, setExpanded] = useState(depth < 1);
+
   const typeStr = getTypeString(schema);
   const hasChildren =
     schema.type === "object" ||
@@ -38,10 +41,24 @@ function PropertyRow({
       ? (schema.items as SchemaObject)?.required
       : schema.required;
 
+  const expandable = hasChildren && childProperties && depth < 5;
+
   return (
     <>
       <tr className={`depth-${Math.min(depth, 4)}`}>
         <td style={{ paddingLeft: depth * 20 + 8 }}>
+          {expandable ? (
+            <button
+              className="prop-toggle"
+              onClick={() => setExpanded(!expanded)}
+              aria-expanded={expanded}
+              aria-label={`${expanded ? "Collapse" : "Expand"} ${name}`}
+            >
+              {expanded ? "▼" : "▶"}
+            </button>
+          ) : (
+            <span className="prop-toggle-placeholder" />
+          )}
           <code className={required ? "prop-required" : ""}>{name}</code>
           {required && <span className="required-mark">*</span>}
         </td>
@@ -71,9 +88,8 @@ function PropertyRow({
           )}
         </td>
       </tr>
-      {hasChildren &&
-        childProperties &&
-        depth < 5 &&
+      {expanded &&
+        expandable &&
         Object.entries(childProperties).map(([childName, childSchema]) => (
           <PropertyRow
             key={`${name}.${childName}`}
