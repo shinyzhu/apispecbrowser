@@ -101,6 +101,142 @@ function SchemaPreview({ schema, depth = 0 }: { schema: SchemaObject; depth?: nu
   );
 }
 
+function getModelTypeString(schema: SchemaObject): string {
+  if (schema.type === "array" && "items" in schema && schema.items) {
+    const items = schema.items as SchemaObject;
+    return `array<${getModelTypeString(items)}>`;
+  }
+  if (schema.oneOf) return `oneOf[${schema.oneOf.length}]`;
+  if (schema.anyOf) return `anyOf[${schema.anyOf.length}]`;
+  if (schema.allOf) return `allOf[${schema.allOf.length}]`;
+
+  const type = schema.type ?? "any";
+  const format = schema.format ? ` (${schema.format})` : "";
+  return `${String(type)}${format}`;
+}
+
+function ModelPropertyRow({
+  name,
+  schema,
+  required,
+  depth = 0,
+}: {
+  name: string;
+  schema: SchemaObject;
+  required: boolean;
+  depth?: number;
+}) {
+  const [expanded, setExpanded] = useState(depth < 1);
+
+  const typeStr = getModelTypeString(schema);
+  const hasChildren =
+    schema.type === "object" ||
+    schema.properties ||
+    (schema.type === "array" &&
+      "items" in schema &&
+      ((schema.items as SchemaObject)?.type === "object" ||
+        (schema.items as SchemaObject)?.properties));
+
+  const childProperties =
+    schema.type === "array" && "items" in schema
+      ? (schema.items as SchemaObject)?.properties
+      : schema.properties;
+
+  const childRequired =
+    schema.type === "array" && "items" in schema
+      ? (schema.items as SchemaObject)?.required
+      : schema.required;
+
+  const expandable = hasChildren && childProperties && depth < 5;
+
+  return (
+    <>
+      <tr>
+        <td style={{ paddingLeft: depth * 20 + 8 }}>
+          {expandable ? (
+            <button
+              className="prop-toggle"
+              onClick={() => setExpanded(!expanded)}
+              aria-expanded={expanded}
+              aria-label={`${expanded ? "Collapse" : "Expand"} ${name}`}
+            >
+              {expanded ? "▼" : "▶"}
+            </button>
+          ) : (
+            <span className="prop-toggle-placeholder" />
+          )}
+          <code className={required ? "prop-required" : ""}>{name}</code>
+          {required && <span className="required-mark">*</span>}
+        </td>
+        <td>
+          <span className="type-label">{typeStr}</span>
+        </td>
+        <td>{schema.description ?? ""}</td>
+      </tr>
+      {expanded &&
+        expandable &&
+        Object.entries(childProperties).map(([childName, childSchema]) => (
+          <ModelPropertyRow
+            key={`${name}.${childName}`}
+            name={childName}
+            schema={childSchema as SchemaObject}
+            required={childRequired?.includes(childName) ?? false}
+            depth={depth + 1}
+          />
+        ))}
+    </>
+  );
+}
+
+function SchemaModelTree({ schema }: { schema: SchemaObject }) {
+  let targetSchema = schema;
+  let arrayWrapper = false;
+
+  if (schema.type === "array" && "items" in schema && schema.items) {
+    const items = schema.items as SchemaObject;
+    if (items.type === "object" || items.properties) {
+      targetSchema = items;
+      arrayWrapper = true;
+    }
+  }
+
+  const properties = targetSchema.properties ?? {};
+  const requiredSet = new Set(targetSchema.required ?? []);
+
+  if (Object.keys(properties).length === 0) {
+    return <SchemaPreview schema={schema} />;
+  }
+
+  return (
+    <div className="schema-model-tree">
+      {arrayWrapper && (
+        <span className="type-label model-tree-type">
+          {getModelTypeString(schema)}
+        </span>
+      )}
+      <table className="properties-table model-tree">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(properties).map(([name, prop]) => (
+            <ModelPropertyRow
+              key={name}
+              name={name}
+              schema={prop as SchemaObject}
+              required={requiredSet.has(name)}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ResponseSection({ responses }: { responses: Record<string, OpenAPIV3.ResponseObject> }) {
   return (
     <div className="responses-section">
@@ -214,7 +350,7 @@ export default function EndpointViewer({ spec, method, path }: EndpointViewerPro
                 <div className={`schema-example-row${examples.length > 0 ? " has-example" : ""}`}>
                   {content.schema && (
                     <div className="request-schema">
-                      <SchemaPreview schema={content.schema as SchemaObject} />
+                      <SchemaModelTree schema={content.schema as SchemaObject} />
                     </div>
                   )}
                   <ExampleBlock examples={examples} />

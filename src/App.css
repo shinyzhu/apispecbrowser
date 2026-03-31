@@ -720,6 +720,24 @@
   font-size: 12px;
 }
 
+/* Schema model tree (request body) */
+.schema-model-tree {
+  width: 100%;
+}
+
+.model-tree-type {
+  margin-bottom: 8px;
+}
+
+.properties-table.model-tree {
+  font-size: 13px;
+}
+
+.properties-table.model-tree th:last-child,
+.properties-table.model-tree td:last-child {
+  width: 40%;
+}
+
 /* Schema Hierarchy */
 .schema-hierarchy {
   max-width: 900px;
