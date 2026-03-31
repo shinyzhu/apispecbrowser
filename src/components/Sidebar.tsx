@@ -99,7 +99,7 @@ export default function Sidebar({
               (child.method && child.method.toLowerCase().includes(lower))
           );
           if (filtered.length > 0) {
-            return { ...item, children: filtered, label: `${item.label.split(" (")[0]} (${filtered.length})` };
+            return { ...item, children: filtered, label: item.label.replace(/\(\d+\)$/, `(${filtered.length})`) };
           }
           return null;
         }
