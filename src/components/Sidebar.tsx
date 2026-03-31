@@ -58,6 +58,8 @@ function NavEntry({
       onSelect({ kind: "endpoint", method: item.method, path: item.path });
     } else if (item.type === "schema") {
       onSelect({ kind: "schema", name: item.label });
+    } else if (item.type === "schema-hierarchy") {
+      onSelect({ kind: "schema-hierarchy" });
     }
   }
 

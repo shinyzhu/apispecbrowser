@@ -1,4 +1,4 @@
-import type { OpenAPISpec, NavItem } from "../types";
+import type { OpenAPISpec, NavItem, SchemaNode, SchemaRelationship } from "../types";
 import type { OpenAPIV3, OpenAPIV3_1 } from "openapi-types";
 
 export async function parseSpecFromUrl(url: string): Promise<OpenAPISpec> {
@@ -123,13 +123,20 @@ export function buildNavItems(spec: OpenAPISpec): NavItem[] {
   if (isV3Document(spec)) {
     const components = spec.components;
     if (components?.schemas) {
-      const schemaChildren: NavItem[] = Object.keys(components.schemas).map(
-        (name) => ({
-          id: `schema-${name}`,
-          label: name,
-          type: "schema" as const,
-        })
-      );
+      const schemaChildren: NavItem[] = [
+        {
+          id: "schema-hierarchy",
+          label: "⊞ Hierarchy View",
+          type: "schema-hierarchy" as const,
+        },
+        ...Object.keys(components.schemas).map(
+          (name) => ({
+            id: `schema-${name}`,
+            label: name,
+            type: "schema" as const,
+          })
+        ),
+      ];
       if (schemaChildren.length > 0) {
         items.push({
           id: "schemas",
@@ -142,4 +149,67 @@ export function buildNavItems(spec: OpenAPISpec): NavItem[] {
   }
 
   return items;
+}
+
+type SchemaObjectLike = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
+
+export function buildSchemaRelationships(spec: OpenAPISpec): SchemaNode[] {
+  if (!isV3Document(spec)) return [];
+
+  const schemas = spec.components?.schemas;
+  if (!schemas) return [];
+
+  const schemaEntries = Object.entries(schemas) as [string, SchemaObjectLike][];
+  const schemaByRef = new Map<object, string>();
+  for (const [name, schema] of schemaEntries) {
+    if (schema && typeof schema === "object") {
+      schemaByRef.set(schema, name);
+    }
+  }
+
+  function findSchemaName(obj: unknown): string | undefined {
+    if (obj && typeof obj === "object") {
+      return schemaByRef.get(obj);
+    }
+    return undefined;
+  }
+
+  function collectRelationships(schema: SchemaObjectLike): SchemaRelationship[] {
+    const rels: SchemaRelationship[] = [];
+
+    if (schema.properties) {
+      for (const [prop, propSchema] of Object.entries(schema.properties)) {
+        const ps = propSchema as SchemaObjectLike;
+        const ref = findSchemaName(ps);
+        if (ref) {
+          rels.push({ property: prop, targetSchema: ref, relationType: "property" });
+        } else if (ps.type === "array" && "items" in ps && ps.items) {
+          const itemRef = findSchemaName(ps.items);
+          if (itemRef) {
+            rels.push({ property: prop, targetSchema: itemRef, relationType: "array-item" });
+          }
+        }
+      }
+    }
+
+    const compositionKeys = ["allOf", "oneOf", "anyOf"] as const;
+    for (const key of compositionKeys) {
+      const list = schema[key] as SchemaObjectLike[] | undefined;
+      if (list) {
+        for (const entry of list) {
+          const ref = findSchemaName(entry);
+          if (ref) {
+            rels.push({ property: key, targetSchema: ref, relationType: key });
+          }
+        }
+      }
+    }
+
+    return rels;
+  }
+
+  return schemaEntries.map(([name, schema]) => ({
+    name,
+    relationships: collectRelationships(schema),
+  }));
 }
